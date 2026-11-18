@@ -1,6 +1,6 @@
 import TicketDashboard from './features/tickets/pages/TicketDashboard'
 import AuthScreen from './features/auth/AuthScreen'
-import { AuthProvider } from './shared/auth/AuthContext'
+import { AuthProvider } from './shared/auth/AuthProvider'
 import { useAuth } from './shared/auth/useAuth'
 import './App.css'
 
