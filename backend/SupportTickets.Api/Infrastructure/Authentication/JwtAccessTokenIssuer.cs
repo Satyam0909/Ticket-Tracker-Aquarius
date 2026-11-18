@@ -12,7 +12,7 @@ public sealed class JwtAccessTokenIssuer(
     string audience,
     TimeProvider timeProvider) : IAccessTokenIssuer
 {
-    private static readonly TimeSpan TokenLifetime = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan TokenLifetime = TimeSpan.FromMinutes(15);
 
     public IssuedAccessToken Issue(UserAccount account)
     {

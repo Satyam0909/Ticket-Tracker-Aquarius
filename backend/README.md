@@ -28,7 +28,7 @@ In Git Bash:
 export ASPNETCORE_ENVIRONMENT=Development
 dotnet tool restore
 dotnet ef database update --project ./backend/SupportTickets.Api/SupportTickets.Api.csproj
-dotnet run --project ./backend/SupportTickets.Api/SupportTickets.Api.csproj --urls http://localhost:5080
+dotnet watch --non-interactive --project ./backend/SupportTickets.Api/SupportTickets.Api.csproj run
 ```
 
 In PowerShell, run:
@@ -37,20 +37,26 @@ In PowerShell, run:
 dotnet tool restore
 $env:ASPNETCORE_ENVIRONMENT = "Development"
 dotnet ef database update --project .\backend\SupportTickets.Api
-dotnet run --project .\backend\SupportTickets.Api --urls http://localhost:5080
+dotnet watch --non-interactive --project .\backend\SupportTickets.Api run
 ```
 
 If your terminal is already in the `backend` directory, use these project paths instead:
 
 ```bash
 dotnet ef database update --project ./SupportTickets.Api/SupportTickets.Api.csproj
-dotnet run --project ./SupportTickets.Api/SupportTickets.Api.csproj --urls http://localhost:5080
+dotnet watch --non-interactive --project ./SupportTickets.Api/SupportTickets.Api.csproj run
 ```
+
+Keep the watcher running in the terminal while developing. Supported C# edits use Hot Reload; changes that require a new process are rebuilt and restarted automatically, without an interactive prompt. The API's HTTP launch profile binds to `http://localhost:5080`.
 
 Production configuration is supplied externally: `DB_DIALECT=mssql`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `AllowedHosts`, `Cors__AllowedOrigins__0`, and `Authentication__Jwt__SigningKey` are required. Rate limiting is configurable with `RateLimiting__PermitLimit`, `RateLimiting__WindowSeconds`, and `RateLimiting__AuthPermitLimit`. When deployed behind a reverse proxy, add ASP.NET Core forwarded-header middleware with explicit trusted proxy addresses before the rate limiter; arbitrary forwarded headers must not be trusted. Never log or return database credentials, SQL exceptions, request bodies, or bearer credentials.
 
 ## Endpoints
 
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/refresh`
+- `POST /api/auth/logout`
 - `GET /api/tickets?status=open&search=printer&page=1&pageSize=10&sortBy=createdAt&sortDirection=desc`
 - `GET /api/tickets/{id}`
 - `POST /api/tickets`
@@ -72,4 +78,6 @@ The HTTP integration tests use a unique in-memory database for each test factory
 
 On startup, EF Core applies pending migrations from `Migrations` to create or alter schema objects without recreating tables or truncating existing rows. Ensure the configured SQL Server account has permission to apply schema changes; review migrations before deployment.
 
-Accounts can be created through public registration (`POST /api/auth/register`) and signed in with `POST /api/auth/login`. Passwords are hashed; the API issues 30-minute bearer tokens and requires them for every ticket endpoint. Development and tests use an ephemeral signing key unless one is configured, so active tokens are invalidated when the API restarts. Every registered account can manage all tickets. Production must supply a stable `Authentication__Jwt__SigningKey` of at least 32 bytes through the deployment secret manager. Signing out clears the current tab's token; it remains valid until it expires. No email verification or password-reset flow is configured.
+Accounts can be created through public registration (`POST /api/auth/register`) and signed in with `POST /api/auth/login`. Passwords are hashed. A 15-minute access JWT and a rotating 14-day refresh token are delivered only in `HttpOnly` cookies; refresh-token hashes are persisted in the database. `POST /api/auth/refresh` rotates the single-use refresh token, and `POST /api/auth/logout` revokes it and clears both cookies. The frontend must send credentialed requests. Development cookies use `SameSite=Lax`; production cookies use `SameSite=None; Secure` and therefore require HTTPS. Browser write requests must use an origin configured in `Cors:AllowedOrigins`; CORS is credentialed but never permits wildcard origins. Configure all deployed frontend origins explicitly.
+
+Development and tests use an ephemeral signing key unless one is configured, so active access tokens are invalidated when the API restarts. Every registered account can manage all tickets. Production must supply a stable `Authentication__Jwt__SigningKey` of at least 32 bytes through the deployment secret manager. A cleared access cookie does not invalidate an already issued stateless JWT; it expires within 15 minutes. No email verification or password-reset flow is configured.

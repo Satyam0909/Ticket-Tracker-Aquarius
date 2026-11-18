@@ -35,7 +35,7 @@ export ASPNETCORE_ENVIRONMENT=Development
 dotnet user-secrets set DB_PASSWORD "<your SQL Server password>" --project ./backend/SupportTickets.Api/SupportTickets.Api.csproj
 dotnet tool restore
 dotnet ef database update --project ./backend/SupportTickets.Api/SupportTickets.Api.csproj
-dotnet run --project ./backend/SupportTickets.Api/SupportTickets.Api.csproj --urls http://localhost:5080
+dotnet watch --non-interactive --project ./backend/SupportTickets.Api/SupportTickets.Api.csproj run
 ```
 
 Or, in PowerShell:
@@ -45,10 +45,10 @@ dotnet tool restore
 $env:ASPNETCORE_ENVIRONMENT = "Development"
 dotnet user-secrets set DB_PASSWORD "<your SQL Server password>" --project .\backend\SupportTickets.Api
 dotnet ef database update --project .\backend\SupportTickets.Api
-dotnet run --project .\backend\SupportTickets.Api --urls http://localhost:5080
+dotnet watch --non-interactive --project .\backend\SupportTickets.Api run
 ```
 
-Swagger UI is available at `http://localhost:5080/swagger`. The Vite development server proxies API requests to the backend:
+Keep the backend watcher running in its terminal. It applies supported C# edits with Hot Reload and automatically rebuilds/restarts for changes that require a restart. The HTTP launch profile keeps the API at `http://localhost:5080`; Swagger UI is at `http://localhost:5080/swagger`. In a second terminal, start the Vite development server, which already hot-reloads frontend changes:
 
 ```powershell
 Set-Location .\frontend
@@ -62,12 +62,12 @@ Open `http://127.0.0.1:5173`.
 
 - Development SQL Server host, port, database, username, and dialect defaults are in `backend/SupportTickets.Api/appsettings.Development.json`; store `DB_PASSWORD` with `dotnet user-secrets` or set it in the shell. ASP.NET Core does not load `.env` files automatically.
 - Do not put production credentials in appsettings files. Supply `DB_DIALECT=mssql`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` through the host's environment/secret manager.
-- Production startup requires the six `DB_*` settings above, a non-wildcard `AllowedHosts`, `Cors__AllowedOrigins__0`, and a stable `Authentication__Jwt__SigningKey` of at least 32 bytes. Configure additional CORS origins by adding indexed `Cors__AllowedOrigins__N` environment variables.
-- The frontend accepts `VITE_API_BASE_URL` at build time. For a separate frontend/API origin, configure backend CORS and update the static host's `Content-Security-Policy` `connect-src` in `frontend/public/_headers`.
+- Production startup requires the six `DB_*` settings above, a non-wildcard `AllowedHosts`, `Cors__AllowedOrigins__0`, and a stable `Authentication__Jwt__SigningKey` of at least 32 bytes. Configure every frontend origin explicitly using indexed `Cors__AllowedOrigins__N` environment variables.
+- The frontend accepts `VITE_API_BASE_URL` at build time. For a separate frontend/API origin, configure backend CORS and update the static host's `Content-Security-Policy` `connect-src` in `frontend/public/_headers`. Cross-origin browser requests use credentials; serve both hosts over HTTPS.
 - Serve production traffic over HTTPS behind a trusted TLS-terminating host. Set rate-limit values with `RateLimiting__PermitLimit` and `RateLimiting__WindowSeconds`. If deployed behind a reverse proxy, add ASP.NET Core forwarded-header middleware with explicit trusted proxy addresses before the rate limiter; never trust arbitrary forwarded headers.
 - On API startup, EF Core applies pending migrations from `backend/SupportTickets.Api/Migrations`. This creates or alters schema objects incrementally and preserves existing rows unless a migration explicitly changes or removes them; migrations should be reviewed before deployment. Ensure the configured database account can apply schema changes. Deployment should build the API and frontend separately and serve the frontend static build through a CDN/static host. Swagger is enabled only in Development; health endpoints are `/health/live` and `/health/ready`.
 
-The app supports public account registration and sign-in using its own user table. Passwords are hashed, and the API requires a 30-minute bearer token for ticket endpoints. All registered users have full access to every ticket; do not make this service public unless that access policy is intended. Email verification and password reset are not configured. The frontend keeps the access token in tab-scoped session storage; signing out clears it locally but does not revoke the token before expiry.
+The app supports public account registration and sign-in using its own user table. Passwords are hashed. A 15-minute access JWT and a rotating 14-day refresh token are delivered only in `HttpOnly` cookies; refresh-token hashes are persisted in the database. The frontend does not read or store tokens in JavaScript storage. Browser write requests are restricted to configured trusted origins, and CORS allows credentials only for those configured origins. Development cookies use `SameSite=Lax`; production cookies require HTTPS and use `SameSite=None; Secure` for cross-origin deployments. Sign-out revokes the refresh token and clears both cookies; any previously issued access JWT remains valid until its short expiry. All registered users have full access to every ticket; do not make this service public unless that access policy is intended. Email verification and password reset are not configured.
 
 ## Validation
 

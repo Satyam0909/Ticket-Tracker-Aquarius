@@ -26,4 +26,4 @@ public sealed class LoginRequest
     public required string Password { get; init; }
 }
 
-public sealed record AccountSessionResponse(string Email, string AccessToken, DateTime ExpiresAt);
+public sealed record AccountSessionResponse(string Email, DateTime ExpiresAt);

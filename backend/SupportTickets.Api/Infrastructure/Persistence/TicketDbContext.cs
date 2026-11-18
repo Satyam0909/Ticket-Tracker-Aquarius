@@ -7,6 +7,7 @@ public sealed class TicketDbContext(DbContextOptions<TicketDbContext> options) :
 {
     public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,5 +41,27 @@ public sealed class TicketDbContext(DbContextOptions<TicketDbContext> options) :
         account.Property(item => item.PasswordHash).HasColumnName("password_hash").IsRequired();
         account.Property(item => item.CreatedAt).HasColumnName("created_at");
         account.HasIndex(item => item.NormalizedEmail).IsUnique();
+
+        var refreshToken = modelBuilder.Entity<RefreshToken>();
+        refreshToken.ToTable("RefreshTokens");
+        refreshToken.HasKey(item => item.Id);
+        refreshToken.Property(item => item.Id).HasColumnName("id");
+        refreshToken.Property(item => item.UserAccountId).HasColumnName("user_account_id");
+        refreshToken.Property(item => item.TokenHash)
+            .HasColumnName("token_hash")
+            .HasMaxLength(64)
+            .IsUnicode(false)
+            .IsRequired();
+        refreshToken.Property(item => item.CreatedAt).HasColumnName("created_at");
+        refreshToken.Property(item => item.ExpiresAt).HasColumnName("expires_at");
+        refreshToken.Property(item => item.RevokedAt)
+            .HasColumnName("revoked_at")
+            .IsConcurrencyToken();
+        refreshToken.HasIndex(item => item.TokenHash).IsUnique();
+        refreshToken.HasIndex(item => item.UserAccountId);
+        refreshToken.HasOne(item => item.Account)
+            .WithMany()
+            .HasForeignKey(item => item.UserAccountId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

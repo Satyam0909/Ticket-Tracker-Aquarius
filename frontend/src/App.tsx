@@ -13,9 +13,17 @@ function App() {
 }
 
 function AuthenticatedApp() {
-  const { session, signOut } = useAuth()
-  if (!session) return <AuthScreen />
-  return <TicketDashboard onLogout={signOut} email={session.email} />
+  const { session, signOut, isInitializing, authError } = useAuth()
+  if (isInitializing) {
+    return (
+      <main className="auth-initializing" role="status">
+        <span className="spinner" />
+        <span>Checking your session…</span>
+      </main>
+    )
+  }
+  if (!session) return <AuthScreen initializationError={authError} />
+  return <TicketDashboard onLogout={signOut} email={session.email} authError={authError} />
 }
 
 export default App

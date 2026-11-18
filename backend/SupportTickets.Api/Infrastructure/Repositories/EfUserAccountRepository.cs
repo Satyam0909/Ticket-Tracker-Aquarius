@@ -17,7 +17,16 @@ public sealed class EfUserAccountRepository(TicketDbContext dbContext) : IUserAc
             account => account.NormalizedEmail == normalizedEmail,
             cancellationToken);
 
+    public Task<RefreshToken?> FindRefreshTokenAsync(
+        string tokenHash,
+        CancellationToken cancellationToken) =>
+        dbContext.RefreshTokens
+            .Include(token => token.Account)
+            .SingleOrDefaultAsync(token => token.TokenHash == tokenHash, cancellationToken);
+
     public void Add(UserAccount account) => dbContext.UserAccounts.Add(account);
+
+    public void Add(RefreshToken refreshToken) => dbContext.RefreshTokens.Add(refreshToken);
 
     public Task SaveChangesAsync(CancellationToken cancellationToken) =>
         dbContext.SaveChangesAsync(cancellationToken);

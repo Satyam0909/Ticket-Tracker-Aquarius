@@ -4,6 +4,16 @@
   padding: 0 0 40px;
 }
 
+.auth-initializing {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .topbar {
   min-height: 78px;
   display: flex;

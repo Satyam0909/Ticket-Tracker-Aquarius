@@ -3,7 +3,7 @@ import { ApiError } from '../../shared/api/httpClient'
 import { useAuth } from '../../shared/auth/useAuth'
 import './AuthScreen.css'
 
-function AuthScreen() {
+function AuthScreen({ initializationError }: { initializationError: string | null }) {
   const { authenticate } = useAuth()
   const [isRegistering, setIsRegistering] = useState(true)
   const [email, setEmail] = useState('')
@@ -170,9 +170,9 @@ function AuthScreen() {
               </>
             )}
 
-            {error && (
+            {(error || initializationError) && (
               <p className="alert error-alert auth-error" role="alert">
-                {error}
+                {error || initializationError}
               </p>
             )}
 

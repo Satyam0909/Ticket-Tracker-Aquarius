@@ -13,10 +13,11 @@ const emptySummary: TicketSummaryModel = { byStatus: [], byPriority: [] }
 
 interface TicketDashboardProps {
   email: string
-  onLogout(): void
+  authError: string | null
+  onLogout(): Promise<void>
 }
 
-function TicketDashboard({ email, onLogout }: TicketDashboardProps) {
+function TicketDashboard({ email, authError, onLogout }: TicketDashboardProps) {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [summary, setSummary] = useState<TicketSummaryModel>(emptySummary)
   const [statusFilter, setStatusFilter] = useState<TicketStatus | ''>('')
@@ -26,6 +27,7 @@ function TicketDashboard({ email, onLogout }: TicketDashboardProps) {
   const [refreshVersion, setRefreshVersion] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [logoutError, setLogoutError] = useState('')
 
   useEffect(() => {
     const controller = new AbortController()
@@ -101,6 +103,15 @@ function TicketDashboard({ email, onLogout }: TicketDashboardProps) {
     setPage(value)
   }
 
+  async function handleLogout() {
+    setLogoutError('')
+    try {
+      await onLogout()
+    } catch (cause: unknown) {
+      setLogoutError(cause instanceof Error ? cause.message : 'Unable to sign out.')
+    }
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -128,11 +139,17 @@ function TicketDashboard({ email, onLogout }: TicketDashboardProps) {
           <span className="team-label">
             <span className="online-dot" /> {email}
           </span>
-          <button className="logout-button" type="button" onClick={onLogout}>
+          <button className="logout-button" type="button" onClick={() => void handleLogout()}>
             Sign out
           </button>
         </div>
       </header>
+
+      {(authError || logoutError) && (
+        <p className="alert error-alert" role="alert">
+          {logoutError || authError}
+        </p>
+      )}
 
       <section className="welcome">
         <div>

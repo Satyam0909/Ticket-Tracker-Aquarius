@@ -1,4 +1,4 @@
-import { request } from '../api/httpClient'
+import { refreshSession, request } from '../api/httpClient'
 import type { AuthSession } from './authSession'
 
 interface Credentials {
@@ -19,5 +19,13 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(credentials),
     })
+  },
+
+  refresh(): Promise<AuthSession> {
+    return refreshSession()
+  },
+
+  logout(): Promise<void> {
+    return request<void>('/api/auth/logout', { method: 'POST' })
   },
 }

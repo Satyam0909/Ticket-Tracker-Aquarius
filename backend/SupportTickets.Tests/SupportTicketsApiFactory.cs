@@ -6,7 +6,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SupportTickets.Api.Infrastructure.Persistence;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace SupportTickets.Tests;
@@ -42,13 +41,23 @@ public sealed class SupportTicketsApiFactory : WebApplicationFactory<Program>
             password = "correct horse battery staple"
         });
         response.EnsureSuccessStatusCode();
-        var session = await response.Content.ReadFromJsonAsync<AccountSessionForTests>();
-        Assert.NotNull(session);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-            "Bearer",
-            session.AccessToken);
+        SetAuthCookies(client, response);
         return client;
     }
 
-    private sealed record AccountSessionForTests(string Email, string AccessToken, DateTime ExpiresAt);
+    public static void SetAuthCookies(HttpClient client, HttpResponseMessage response)
+    {
+        var cookies = response.Headers.GetValues("Set-Cookie")
+            .Select(header => header.Split(';', 2)[0]);
+        client.DefaultRequestHeaders.Remove("Cookie");
+        client.DefaultRequestHeaders.TryAddWithoutValidation("Cookie", string.Join("; ", cookies));
+    }
+
+    public static string? GetCookieValue(HttpResponseMessage response, string name) =>
+        response.Headers.GetValues("Set-Cookie")
+            .Select(header => header.Split(';', 2)[0])
+            .Select(cookie => cookie.Split('=', 2))
+            .Where(parts => parts.Length == 2 && parts[0] == name)
+            .Select(parts => parts[1])
+            .FirstOrDefault();
 }
