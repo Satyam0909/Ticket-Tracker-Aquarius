@@ -22,10 +22,7 @@ public sealed class SupportTicketsApiFactory : WebApplicationFactory<Program>
             {
                 ["ConnectionStrings:Tickets"] = "Server=(localdb)\\MSSQLLocalDB;Database=Ignored",
                 ["Cors:AllowedOrigins:0"] = "http://localhost:5173",
-                ["RateLimiting:PermitLimit"] = "1000",
-                ["Authentication:Jwt:SigningKey"] = "test-signing-key-that-is-at-least-32-bytes-long",
-                ["Authentication:Jwt:Issuer"] = "SupportTickets.Tests",
-                ["Authentication:Jwt:Audience"] = "SupportTickets.Tests"
+                ["RateLimiting:PermitLimit"] = "1000"
             }));
         builder.ConfigureServices(services =>
         {

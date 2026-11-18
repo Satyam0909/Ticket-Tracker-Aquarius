@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { ApiError } from '../../shared/api/httpClient'
-import { useAuth } from '../../shared/auth/AuthContext'
+import { useAuth } from '../../shared/auth/useAuth'
 import './AuthScreen.css'
 
 function AuthScreen() {

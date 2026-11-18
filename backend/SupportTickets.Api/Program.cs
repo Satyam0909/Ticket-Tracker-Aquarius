@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using System.Text;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
@@ -15,7 +16,14 @@ using SupportTickets.Api.Infrastructure.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 var jwtSigningKey = builder.Configuration["Authentication:Jwt:SigningKey"];
-if (string.IsNullOrWhiteSpace(jwtSigningKey) || Encoding.UTF8.GetByteCount(jwtSigningKey) < 32)
+if (string.IsNullOrWhiteSpace(jwtSigningKey))
+{
+    if (!builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Testing"))
+        throw new InvalidOperationException("Configure Authentication:Jwt:SigningKey.");
+    jwtSigningKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48));
+}
+
+if (Encoding.UTF8.GetByteCount(jwtSigningKey) < 32)
     throw new InvalidOperationException("Configure Authentication:Jwt:SigningKey with at least 32 bytes.");
 
 var jwtIssuer = builder.Configuration["Authentication:Jwt:Issuer"] ?? "SupportTickets.Api";
@@ -54,6 +62,7 @@ builder.Services
             ValidAudience = jwtAudience,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = signingKey,
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
             ValidateLifetime = true,
             RequireExpirationTime = true,
             RequireSignedTokens = true,

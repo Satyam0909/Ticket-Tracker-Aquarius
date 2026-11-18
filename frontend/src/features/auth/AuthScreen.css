@@ -3,9 +3,7 @@
   padding: 24px;
   display: grid;
   place-items: center;
-  background:
-    radial-gradient(ellipse at 20% 5%, #f0ebff 0, transparent 38%),
-    #faf9fc;
+  background: radial-gradient(ellipse at 20% 5%, #f0ebff 0, transparent 38%), #faf9fc;
 }
 
 .auth-card {

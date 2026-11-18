@@ -22,7 +22,6 @@ In Git Bash:
 
 ```bash
 export ASPNETCORE_ENVIRONMENT=Development
-export Authentication__Jwt__SigningKey="$(openssl rand -base64 48)"
 dotnet tool restore
 dotnet ef database update --project ./backend/SupportTickets.Api/SupportTickets.Api.csproj
 dotnet run --project ./backend/SupportTickets.Api/SupportTickets.Api.csproj --urls http://localhost:5080
@@ -33,9 +32,6 @@ In PowerShell, run:
 ```powershell
 dotnet tool restore
 $env:ASPNETCORE_ENVIRONMENT = "Development"
-$bytes = New-Object byte[] 48
-[Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
-$env:Authentication__Jwt__SigningKey = [Convert]::ToBase64String($bytes)
 dotnet ef database update --project .\backend\SupportTickets.Api
 dotnet run --project .\backend\SupportTickets.Api --urls http://localhost:5080
 ```
@@ -47,7 +43,7 @@ dotnet ef database update --project ./SupportTickets.Api/SupportTickets.Api.cspr
 dotnet run --project ./SupportTickets.Api/SupportTickets.Api.csproj --urls http://localhost:5080
 ```
 
-Production configuration is supplied externally: `ConnectionStrings__Tickets`, `AllowedHosts`, and `Cors__AllowedOrigins__0` are required. Rate limiting is configurable with `RateLimiting__PermitLimit` and `RateLimiting__WindowSeconds`. When deployed behind a reverse proxy, add ASP.NET Core forwarded-header middleware with explicit trusted proxy addresses before the rate limiter; arbitrary forwarded headers must not be trusted. Never log or return connection strings, SQL exceptions, request bodies, or bearer credentials.
+Production configuration is supplied externally: `ConnectionStrings__Tickets`, `AllowedHosts`, `Cors__AllowedOrigins__0`, and `Authentication__Jwt__SigningKey` are required. Rate limiting is configurable with `RateLimiting__PermitLimit`, `RateLimiting__WindowSeconds`, and `RateLimiting__AuthPermitLimit`. When deployed behind a reverse proxy, add ASP.NET Core forwarded-header middleware with explicit trusted proxy addresses before the rate limiter; arbitrary forwarded headers must not be trusted. Never log or return connection strings, SQL exceptions, request bodies, or bearer credentials.
 
 ## Endpoints
 
@@ -70,4 +66,4 @@ dotnet test .\backend\SupportTickets.Tests\SupportTickets.Tests.csproj
 
 The HTTP integration tests use a unique in-memory database for each test factory; production persistence remains SQL Server.
 
-Accounts can be created through public registration (`POST /api/auth/register`) and signed in with `POST /api/auth/login`. Passwords are hashed; the API issues 30-minute bearer tokens and requires them for every ticket endpoint. Every registered account can manage all tickets. Set `Authentication__Jwt__SigningKey` to a secret of at least 32 bytes (the commands above generate one locally); supply a stable secret through the deployment secret manager in production. No email verification or password-reset flow is configured.
+Accounts can be created through public registration (`POST /api/auth/register`) and signed in with `POST /api/auth/login`. Passwords are hashed; the API issues 30-minute bearer tokens and requires them for every ticket endpoint. Development and tests use an ephemeral signing key unless one is configured, so active tokens are invalidated when the API restarts. Every registered account can manage all tickets. Production must supply a stable `Authentication__Jwt__SigningKey` of at least 32 bytes through the deployment secret manager. Signing out clears the current tab's token; it remains valid until it expires. No email verification or password-reset flow is configured.

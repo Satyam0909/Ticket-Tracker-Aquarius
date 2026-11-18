@@ -1,19 +1,7 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { authApi } from './authApi'
-import {
-  clearAuthSession,
-  readAuthSession,
-  saveAuthSession,
-  type AuthSession,
-} from './authSession'
-
-interface AuthContextValue {
-  session: AuthSession | null
-  authenticate(email: string, password: string, register: boolean): Promise<void>
-  signOut(): void
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null)
+import { AuthContext } from './auth-context'
+import { clearAuthSession, readAuthSession, saveAuthSession, type AuthSession } from './authSession'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(() => readAuthSession())
@@ -45,10 +33,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuth(): AuthContextValue {
-  const context = useContext(AuthContext)
-  if (!context) throw new Error('useAuth must be used inside AuthProvider.')
-  return context
 }

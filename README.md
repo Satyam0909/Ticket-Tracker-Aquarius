@@ -32,7 +32,6 @@ From the project root in Git Bash:
 
 ```bash
 export ASPNETCORE_ENVIRONMENT=Development
-export Authentication__Jwt__SigningKey="$(openssl rand -base64 48)"
 dotnet tool restore
 dotnet ef database update --project ./backend/SupportTickets.Api/SupportTickets.Api.csproj
 dotnet run --project ./backend/SupportTickets.Api/SupportTickets.Api.csproj --urls http://localhost:5080
@@ -43,9 +42,6 @@ Or, in PowerShell:
 ```powershell
 dotnet tool restore
 $env:ASPNETCORE_ENVIRONMENT = "Development"
-$bytes = New-Object byte[] 48
-[Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
-$env:Authentication__Jwt__SigningKey = [Convert]::ToBase64String($bytes)
 dotnet ef database update --project .\backend\SupportTickets.Api
 dotnet run --project .\backend\SupportTickets.Api --urls http://localhost:5080
 ```
@@ -69,7 +65,7 @@ Open `http://127.0.0.1:5173`.
 - Serve production traffic over HTTPS behind a trusted TLS-terminating host. Set rate-limit values with `RateLimiting__PermitLimit` and `RateLimiting__WindowSeconds`. If deployed behind a reverse proxy, add ASP.NET Core forwarded-header middleware with explicit trusted proxy addresses before the rate limiter; never trust arbitrary forwarded headers.
 - Deployment should build the API and frontend separately, apply EF migrations as a release step, and serve the frontend static build through a CDN/static host. Swagger is enabled only in Development; health endpoints are `/health/live` and `/health/ready`.
 
-The app supports public account registration and sign-in using its own user table. Passwords are hashed, and the API requires a 30-minute bearer token for ticket endpoints. All registered users have full access to every ticket; do not make this service public unless that access policy is intended. Email verification and password reset are not configured. The frontend keeps the access token in tab-scoped session storage.
+The app supports public account registration and sign-in using its own user table. Passwords are hashed, and the API requires a 30-minute bearer token for ticket endpoints. All registered users have full access to every ticket; do not make this service public unless that access policy is intended. Email verification and password reset are not configured. The frontend keeps the access token in tab-scoped session storage; signing out clears it locally but does not revoke the token before expiry.
 
 ## Validation
 
