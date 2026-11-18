@@ -3,6 +3,7 @@ using System.Text;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
@@ -13,6 +14,7 @@ using SupportTickets.Api.Application;
 using SupportTickets.Api.Application.Contracts;
 using SupportTickets.Api.Infrastructure;
 using SupportTickets.Api.Infrastructure.Authentication;
+using SupportTickets.Api.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 var jwtSigningKey = builder.Configuration["Authentication:Jwt:SigningKey"];
@@ -132,6 +134,13 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<TicketDbContext>();
+    if (dbContext.Database.IsRelational())
+        await dbContext.Database.MigrateAsync();
+}
 
 app.UseMiddleware<ApiExceptionMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();

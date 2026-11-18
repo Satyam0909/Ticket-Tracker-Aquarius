@@ -16,7 +16,9 @@ function TicketSummary({ summary }: TicketSummaryProps) {
   return (
     <section className="summary-grid" aria-label="Ticket summary">
       <article className="summary-card">
-        <span className="summary-icon icon-lilac">◎</span>
+        <span className="summary-icon icon-lilac" aria-hidden="true">
+          ▤
+        </span>
         <div>
           <p>All tickets</p>
           <strong>{totalTickets}</strong>
@@ -25,7 +27,7 @@ function TicketSummary({ summary }: TicketSummaryProps) {
       </article>
       {ticketStatuses.map((status) => (
         <article className="summary-card" key={status}>
-          <span className={`summary-icon icon-${status}`}>
+          <span className={`summary-icon icon-${status}`} aria-hidden="true">
             {status === 'open' ? '◷' : status === 'in_progress' ? '↗' : '✓'}
           </span>
           <div>

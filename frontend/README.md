@@ -1,4 +1,4 @@
-# Frontend
+# Ticket Tracker frontend
 
 React + TypeScript ticket dashboard. Requires Node.js 24 or later. The source is organized by feature, with shared API, constants, and utilities under `src/shared`.
 

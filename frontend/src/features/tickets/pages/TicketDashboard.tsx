@@ -104,11 +104,25 @@ function TicketDashboard({ email, onLogout }: TicketDashboardProps) {
   return (
     <main className="app-shell">
       <header className="topbar">
-        <a className="brand" href="/" aria-label="Resolve home">
-          <span className="brand-mark">R</span>
-          <span>
-            resolve<span className="brand-dot">.</span>
+        <a className="brand" href="/" aria-label="Ticket Tracker home">
+          <span className="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path
+                d="M4.5 7.5h15v3a2 2 0 0 0 0 4v3h-15v-3a2 2 0 0 0 0-4v-3Z"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M12 8.5v2m0 3v2"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeDasharray="1 1"
+              />
+            </svg>
           </span>
+          <span>Ticket Tracker</span>
         </a>
         <div className="account-actions">
           <span className="team-label">
@@ -122,11 +136,11 @@ function TicketDashboard({ email, onLogout }: TicketDashboardProps) {
 
       <section className="welcome">
         <div>
-          <p className="eyebrow">CUSTOMER CARE / OVERVIEW</p>
+          <p className="eyebrow">TICKET TRACKER / OVERVIEW</p>
           <h1>
-            Good work starts with <span>good support.</span>
+            Support work, <span>under control.</span>
           </h1>
-          <p className="subheading">Keep every conversation moving forward.</p>
+          <p className="subheading">Prioritize clearly. Resolve confidently.</p>
         </div>
         <div className="date-chip">{formatToday()}</div>
       </section>
@@ -153,8 +167,8 @@ function TicketDashboard({ email, onLogout }: TicketDashboardProps) {
       </div>
 
       <footer className="page-footer">
-        <span>RESOLVE SUPPORT TRACKER</span>
-        <span>Made for teams that care.</span>
+        <span>TICKET TRACKER</span>
+        <span>Every request has a clear next step.</span>
       </footer>
     </main>
   )

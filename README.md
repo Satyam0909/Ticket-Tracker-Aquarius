@@ -1,4 +1,4 @@
-# Resolve Support Ticket Tracker
+# Ticket Tracker
 
 A modular full-stack support-ticket application. The backend is an ASP.NET Core Web API with EF Core and SQL Server; the frontend is React and TypeScript. The backend targets .NET 10, and the frontend requires Node.js 24 or later.
 
@@ -23,7 +23,7 @@ The backend is a modular monolith: controllers depend on application services, w
 ## Prerequisites
 
 - .NET 10 SDK
-- SQL Server (LocalDB for local Windows development)
+- SQL Server listening at the configured host and port
 - Node.js 24+ and npm
 
 ## Local setup
@@ -32,6 +32,7 @@ From the project root in Git Bash:
 
 ```bash
 export ASPNETCORE_ENVIRONMENT=Development
+dotnet user-secrets set DB_PASSWORD "<your SQL Server password>" --project ./backend/SupportTickets.Api/SupportTickets.Api.csproj
 dotnet tool restore
 dotnet ef database update --project ./backend/SupportTickets.Api/SupportTickets.Api.csproj
 dotnet run --project ./backend/SupportTickets.Api/SupportTickets.Api.csproj --urls http://localhost:5080
@@ -42,6 +43,7 @@ Or, in PowerShell:
 ```powershell
 dotnet tool restore
 $env:ASPNETCORE_ENVIRONMENT = "Development"
+dotnet user-secrets set DB_PASSWORD "<your SQL Server password>" --project .\backend\SupportTickets.Api
 dotnet ef database update --project .\backend\SupportTickets.Api
 dotnet run --project .\backend\SupportTickets.Api --urls http://localhost:5080
 ```
@@ -58,12 +60,12 @@ Open `http://127.0.0.1:5173`.
 
 ## Configuration and deployment
 
-- Development SQL Server configuration is in `backend/SupportTickets.Api/appsettings.Development.json`.
-- Do not put production credentials in appsettings files. Supply `ConnectionStrings__Tickets` through the host's secret manager/environment.
-- Production startup requires a non-wildcard `AllowedHosts`, `Cors__AllowedOrigins__0`, `ConnectionStrings__Tickets`, and a stable `Authentication__Jwt__SigningKey` of at least 32 bytes. Configure additional CORS origins by adding indexed `Cors__AllowedOrigins__N` environment variables.
+- Development SQL Server host, port, database, username, and dialect defaults are in `backend/SupportTickets.Api/appsettings.Development.json`; store `DB_PASSWORD` with `dotnet user-secrets` or set it in the shell. ASP.NET Core does not load `.env` files automatically.
+- Do not put production credentials in appsettings files. Supply `DB_DIALECT=mssql`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` through the host's environment/secret manager.
+- Production startup requires the six `DB_*` settings above, a non-wildcard `AllowedHosts`, `Cors__AllowedOrigins__0`, and a stable `Authentication__Jwt__SigningKey` of at least 32 bytes. Configure additional CORS origins by adding indexed `Cors__AllowedOrigins__N` environment variables.
 - The frontend accepts `VITE_API_BASE_URL` at build time. For a separate frontend/API origin, configure backend CORS and update the static host's `Content-Security-Policy` `connect-src` in `frontend/public/_headers`.
 - Serve production traffic over HTTPS behind a trusted TLS-terminating host. Set rate-limit values with `RateLimiting__PermitLimit` and `RateLimiting__WindowSeconds`. If deployed behind a reverse proxy, add ASP.NET Core forwarded-header middleware with explicit trusted proxy addresses before the rate limiter; never trust arbitrary forwarded headers.
-- Deployment should build the API and frontend separately, apply EF migrations as a release step, and serve the frontend static build through a CDN/static host. Swagger is enabled only in Development; health endpoints are `/health/live` and `/health/ready`.
+- On API startup, EF Core applies pending migrations from `backend/SupportTickets.Api/Migrations`. This creates or alters schema objects incrementally and preserves existing rows unless a migration explicitly changes or removes them; migrations should be reviewed before deployment. Ensure the configured database account can apply schema changes. Deployment should build the API and frontend separately and serve the frontend static build through a CDN/static host. Swagger is enabled only in Development; health endpoints are `/health/live` and `/health/ready`.
 
 The app supports public account registration and sign-in using its own user table. Passwords are hashed, and the API requires a 30-minute bearer token for ticket endpoints. All registered users have full access to every ticket; do not make this service public unless that access policy is intended. Email verification and password reset are not configured. The frontend keeps the access token in tab-scoped session storage; signing out clears it locally but does not revoke the token before expiry.
 

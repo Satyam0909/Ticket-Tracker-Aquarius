@@ -16,7 +16,11 @@ ASP.NET Core Web API targeting .NET 10, with EF Core and SQL Server. The API con
 
 ## Run and migrate
 
-Set `ASPNETCORE_ENVIRONMENT=Development` to load the LocalDB connection string. Run the commands from the repository root.
+Set `ASPNETCORE_ENVIRONMENT=Development` to load the local SQL Server settings. Set the database password once in .NET User Secrets (not in a tracked file), from the repository root:
+
+```shell
+dotnet user-secrets set DB_PASSWORD "<your SQL Server password>" --project ./backend/SupportTickets.Api/SupportTickets.Api.csproj
+```
 
 In Git Bash:
 
@@ -43,7 +47,7 @@ dotnet ef database update --project ./SupportTickets.Api/SupportTickets.Api.cspr
 dotnet run --project ./SupportTickets.Api/SupportTickets.Api.csproj --urls http://localhost:5080
 ```
 
-Production configuration is supplied externally: `ConnectionStrings__Tickets`, `AllowedHosts`, `Cors__AllowedOrigins__0`, and `Authentication__Jwt__SigningKey` are required. Rate limiting is configurable with `RateLimiting__PermitLimit`, `RateLimiting__WindowSeconds`, and `RateLimiting__AuthPermitLimit`. When deployed behind a reverse proxy, add ASP.NET Core forwarded-header middleware with explicit trusted proxy addresses before the rate limiter; arbitrary forwarded headers must not be trusted. Never log or return connection strings, SQL exceptions, request bodies, or bearer credentials.
+Production configuration is supplied externally: `DB_DIALECT=mssql`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `AllowedHosts`, `Cors__AllowedOrigins__0`, and `Authentication__Jwt__SigningKey` are required. Rate limiting is configurable with `RateLimiting__PermitLimit`, `RateLimiting__WindowSeconds`, and `RateLimiting__AuthPermitLimit`. When deployed behind a reverse proxy, add ASP.NET Core forwarded-header middleware with explicit trusted proxy addresses before the rate limiter; arbitrary forwarded headers must not be trusted. Never log or return database credentials, SQL exceptions, request bodies, or bearer credentials.
 
 ## Endpoints
 
@@ -65,5 +69,7 @@ dotnet test .\backend\SupportTickets.Tests\SupportTickets.Tests.csproj
 ```
 
 The HTTP integration tests use a unique in-memory database for each test factory; production persistence remains SQL Server.
+
+On startup, EF Core applies pending migrations from `Migrations` to create or alter schema objects without recreating tables or truncating existing rows. Ensure the configured SQL Server account has permission to apply schema changes; review migrations before deployment.
 
 Accounts can be created through public registration (`POST /api/auth/register`) and signed in with `POST /api/auth/login`. Passwords are hashed; the API issues 30-minute bearer tokens and requires them for every ticket endpoint. Development and tests use an ephemeral signing key unless one is configured, so active tokens are invalidated when the API restarts. Every registered account can manage all tickets. Production must supply a stable `Authentication__Jwt__SigningKey` of at least 32 bytes through the deployment secret manager. Signing out clears the current tab's token; it remains valid until it expires. No email verification or password-reset flow is configured.

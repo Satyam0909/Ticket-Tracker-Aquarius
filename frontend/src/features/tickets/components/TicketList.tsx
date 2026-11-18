@@ -41,9 +41,9 @@ function TicketList({
     <section className="ticket-panel">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">YOUR QUEUE</p>
+          <p className="eyebrow">WORK QUEUE</p>
           <h2>
-            Support tickets <span className="count-pill">{totalCount}</span>
+            Tickets <span className="count-pill">{totalCount}</span>
           </h2>
         </div>
         <span className="updated-label">

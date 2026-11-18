@@ -20,7 +20,6 @@ public sealed class SupportTicketsApiFactory : WebApplicationFactory<Program>
         builder.ConfigureAppConfiguration((_, configuration) =>
             configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:Tickets"] = "Server=(localdb)\\MSSQLLocalDB;Database=Ignored",
                 ["Cors:AllowedOrigins:0"] = "http://localhost:5173",
                 ["RateLimiting:PermitLimit"] = "1000"
             }));
