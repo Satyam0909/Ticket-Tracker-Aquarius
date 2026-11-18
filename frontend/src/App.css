@@ -166,6 +166,31 @@ p {
   box-shadow: var(--shadow-card);
 }
 
+.summary-filter {
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.summary-filter:hover {
+  border-color: #a9c1d4;
+  transform: translateY(-2px);
+}
+
+.summary-filter.is-selected {
+  border-color: var(--blue);
+  background: linear-gradient(145deg, #f1f7fb, #fff 75%);
+  box-shadow:
+    0 0 0 2px #2469961a,
+    var(--shadow-card);
+}
+
 .summary-icon {
   width: 40px;
   height: 40px;

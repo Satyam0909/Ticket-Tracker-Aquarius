@@ -145,7 +145,11 @@ function TicketDashboard({ email, onLogout }: TicketDashboardProps) {
         <div className="date-chip">{formatToday()}</div>
       </section>
 
-      <TicketSummary summary={summary} />
+      <TicketSummary
+        summary={summary}
+        statusFilter={statusFilter}
+        onStatusSelect={changeStatusFilter}
+      />
 
       <div className="workspace-grid">
         <TicketList

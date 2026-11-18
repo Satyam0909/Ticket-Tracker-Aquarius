@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
-describe('App authentication', () => {
+describe('App authentication and ticket filters', () => {
   beforeEach(() => {
     sessionStorage.clear()
   })
@@ -70,6 +70,19 @@ describe('App authentication', () => {
       for (const [, init] of ticketRequests) {
         expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer test-access-token')
       }
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Show open tickets' }))
+    await waitFor(() => {
+      const ticketRequests = fetchMock.mock.calls
+        .map(([input, init]) => ({ url: input.toString(), init }))
+        .filter(({ url }) => url.includes('/api/tickets?'))
+      expect(ticketRequests).toHaveLength(2)
+      expect(ticketRequests[1].url).toContain('status=open')
+      expect(screen.getByRole('button', { name: 'Show open tickets' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
     })
   })
 })
