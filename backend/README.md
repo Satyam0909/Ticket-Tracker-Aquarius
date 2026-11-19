@@ -9,7 +9,7 @@ ASP.NET Core Web API targeting .NET 10, with EF Core and SQL Server. The API con
 - `Api/Middleware`: exception translation, request logging, and security headers.
 - `Application/Services`: ticket use cases and repository-independent contracts.
 - `Application/Utilities`: reusable ticket filtering, sorting, and pagination.
-- `Domain`: ticket entity and status/priority constants.
+- `Domain`: ticket/attachment entities and status/priority constants.
 - `Infrastructure/Repositories`: EF Core query and persistence implementation.
 - `Infrastructure/Persistence`: SQL Server `DbContext` and mappings.
 - `Migrations`: versioned SQL Server schema.
@@ -59,6 +59,10 @@ Production configuration is supplied externally: `DB_DIALECT=mssql`, `DB_HOST`, 
 - `POST /api/auth/logout`
 - `GET /api/tickets?status=open&search=printer&page=1&pageSize=10&sortBy=createdAt&sortDirection=desc`
 - `GET /api/tickets/{id}`
+- `GET /api/tickets/{ticketId}/attachments`
+- `POST /api/tickets/{ticketId}/attachments` (multipart field name: `files`)
+- `GET /api/tickets/{ticketId}/attachments/{attachmentId}`
+- `DELETE /api/tickets/{ticketId}/attachments/{attachmentId}`
 - `POST /api/tickets`
 - `PUT /api/tickets/{id}`
 - `DELETE /api/tickets/{id}`
@@ -67,6 +71,8 @@ Production configuration is supplied externally: `DB_DIALECT=mssql`, `DB_HOST`, 
 - `GET /health/ready`
 
 Invalid requests return 400 Problem Details, unknown ticket IDs return 404 Problem Details, and rate-limited requests return 429 Problem Details. Error bodies include an error code and trace ID without echoing submitted data. Ticket summaries are grouped by SQL Server queries; each change is persisted with EF Core's SaveChanges transaction.
+
+Ticket attachments are stored as `varbinary(max)` rows in SQL Server and cascade-delete with their ticket. Each ticket can have at most three files; each file is limited to 10 MiB. The API accepts `.jpg`, `.jpeg`, `.png`, `.tiff`, `.pdf`, `.msg`, `.doc`, `.docx`, `.txt`, `.csv`, `.xls`, `.xlsx`, `.xlsm`, `.xltx`, `.xltm`, `.ppt`, `.pptx`, `.zip`, `.rar`, `.igs`, `.stp`, `.step`, `.x_t`, `.catpart`, `.dwg`, `.stl`, `.sla`, `.dxf`, and `.jt`; all other extensions, including executable and script formats, are rejected. Downloads require authentication and are returned as attachments rather than inline content.
 
 ## Tests
 

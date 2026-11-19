@@ -117,6 +117,51 @@ namespace SupportTickets.Api.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SupportTickets.Api.Domain.Entities.TicketAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<byte[]>("Content")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)")
+                        .HasColumnName("content");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("file_name");
+
+                    b.Property<long>("Length")
+                        .HasColumnType("bigint")
+                        .HasColumnName("length");
+
+                    b.Property<int>("Slot")
+                        .HasColumnType("int")
+                        .HasColumnName("slot");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ticket_id");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("uploaded_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TicketId", "Slot")
+                        .IsUnique();
+
+                    b.ToTable("TicketAttachments", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_TicketAttachments_Slot", "[slot] BETWEEN 1 AND 3");
+                        });
+                });
+
             modelBuilder.Entity("SupportTickets.Api.Domain.Entities.UserAccount", b =>
                 {
                     b.Property<Guid>("Id")
@@ -162,6 +207,15 @@ namespace SupportTickets.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("SupportTickets.Api.Domain.Entities.TicketAttachment", b =>
+                {
+                    b.HasOne("SupportTickets.Api.Domain.Entities.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

@@ -29,6 +29,21 @@ public sealed class ApiExceptionMiddleware(
                 AccountAlreadyExistsException =>
                     (StatusCodes.Status409Conflict, ApiErrorCodes.AccountAlreadyExists,
                         "Account already exists", ApiMessages.AccountAlreadyExists),
+                InvalidTicketAttachmentException invalidAttachment =>
+                    (StatusCodes.Status400BadRequest, ApiErrorCodes.InvalidTicketAttachment,
+                        "Invalid attachment", invalidAttachment.Message),
+                TicketAttachmentTooLargeException tooLarge =>
+                    (StatusCodes.Status413PayloadTooLarge, ApiErrorCodes.TicketAttachmentTooLarge,
+                        "Attachment too large", tooLarge.Message),
+                TicketAttachmentLimitExceededException limitExceeded =>
+                    (StatusCodes.Status409Conflict, ApiErrorCodes.TicketAttachmentLimitExceeded,
+                        "Attachment limit reached", limitExceeded.Message),
+                TicketAttachmentSlotConflictException attachmentConflict =>
+                    (StatusCodes.Status409Conflict, ApiErrorCodes.TicketAttachmentConflict,
+                        "Attachment conflict", attachmentConflict.Message),
+                TicketAttachmentNotFoundException attachmentNotFound =>
+                    (StatusCodes.Status404NotFound, ApiErrorCodes.TicketAttachmentNotFound,
+                        "Attachment not found", attachmentNotFound.Message),
                 _ =>
                     (StatusCodes.Status500InternalServerError, ApiErrorCodes.InternalError,
                         "Server error", ApiMessages.InternalError)

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using SupportTickets.Api.Application.Contracts;
+using System.Text;
 
 namespace SupportTickets.Tests;
 
@@ -103,6 +104,74 @@ public sealed class TicketsApiTests
     }
 
     [Fact]
+    public async Task Attachments_allow_three_files_download_and_reuse_a_slot_after_delete()
+    {
+        using var factory = new SupportTicketsApiFactory();
+        using var client = await factory.CreateAuthenticatedClientAsync();
+        var createResponse = await client.PostAsJsonAsync("/api/tickets", new { title = "CAD issue" });
+        var ticket = await createResponse.Content.ReadFromJsonAsync<TicketResponse>();
+        Assert.NotNull(ticket);
+
+        using var upload = CreateFiles(
+            ("drawing.STL", "stl bytes"),
+            ("photo.jpg", "jpg bytes"),
+            ("report.pdf", "pdf bytes"));
+        var uploadedResponse = await client.PostAsync(
+            $"/api/tickets/{ticket.Id}/attachments",
+            upload);
+        Assert.Equal(HttpStatusCode.OK, uploadedResponse.StatusCode);
+        var uploaded = await uploadedResponse.Content.ReadFromJsonAsync<TicketAttachmentResponse[]>();
+        Assert.NotNull(uploaded);
+        Assert.Equal(3, uploaded.Length);
+
+        var download = await client.GetAsync(
+            $"/api/tickets/{ticket.Id}/attachments/{uploaded[0].Id}");
+        Assert.Equal(HttpStatusCode.OK, download.StatusCode);
+        Assert.Equal("application/octet-stream", download.Content.Headers.ContentType?.MediaType);
+        Assert.Equal("stl bytes", await download.Content.ReadAsStringAsync());
+
+        using var overLimit = CreateFiles(("extra.txt", "extra"));
+        var rejected = await client.PostAsync(
+            $"/api/tickets/{ticket.Id}/attachments",
+            overLimit);
+        Assert.Equal(HttpStatusCode.Conflict, rejected.StatusCode);
+
+        var delete = await client.DeleteAsync(
+            $"/api/tickets/{ticket.Id}/attachments/{uploaded[0].Id}");
+        Assert.Equal(HttpStatusCode.NoContent, delete.StatusCode);
+
+        using var replacement = CreateFiles(("notes.txt", "notes"));
+        var replacementResponse = await client.PostAsync(
+            $"/api/tickets/{ticket.Id}/attachments",
+            replacement);
+        Assert.Equal(HttpStatusCode.OK, replacementResponse.StatusCode);
+        Assert.Equal(3, (await replacementResponse.Content.ReadFromJsonAsync<TicketAttachmentResponse[]>())?.Length);
+    }
+
+    [Fact]
+    public async Task Attachments_reject_blocked_extensions_and_files_over_ten_megabytes()
+    {
+        using var factory = new SupportTicketsApiFactory();
+        using var client = await factory.CreateAuthenticatedClientAsync();
+        var createResponse = await client.PostAsJsonAsync("/api/tickets", new { title = "Upload rules" });
+        var ticket = await createResponse.Content.ReadFromJsonAsync<TicketResponse>();
+        Assert.NotNull(ticket);
+
+        using var blockedFile = CreateFiles(("payload.exe", "not allowed"));
+        var blockedResponse = await client.PostAsync(
+            $"/api/tickets/{ticket.Id}/attachments",
+            blockedFile);
+        Assert.Equal(HttpStatusCode.BadRequest, blockedResponse.StatusCode);
+        Assert.Contains("Only .jpg", await blockedResponse.Content.ReadAsStringAsync());
+
+        using var largeFile = CreateFiles(("large.txt", new string('x', 10 * 1024 * 1024 + 1)));
+        var largeResponse = await client.PostAsync(
+            $"/api/tickets/{ticket.Id}/attachments",
+            largeFile);
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, largeResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task Liveness_endpoint_is_available()
     {
         using var factory = new SupportTicketsApiFactory();
@@ -111,5 +180,13 @@ public sealed class TicketsApiTests
         var response = await client.GetAsync("/health/live");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    private static MultipartFormDataContent CreateFiles(params (string FileName, string Content)[] files)
+    {
+        var form = new MultipartFormDataContent();
+        foreach (var (fileName, content) in files)
+            form.Add(new ByteArrayContent(Encoding.UTF8.GetBytes(content)), "files", fileName);
+        return form;
     }
 }

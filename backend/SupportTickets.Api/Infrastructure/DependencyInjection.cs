@@ -24,6 +24,7 @@ public static class DependencyInjection
         services.AddDbContextPool<TicketDbContext>(options =>
             options.UseSqlServer(connectionString ?? string.Empty, sql => sql.EnableRetryOnFailure()));
         services.AddScoped<ITicketRepository, EfTicketRepository>();
+        services.AddScoped<ITicketAttachmentRepository, EfTicketAttachmentRepository>();
         services.AddScoped<IUserAccountRepository, EfUserAccountRepository>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IPasswordHasher<UserAccount>, PasswordHasher<UserAccount>>();

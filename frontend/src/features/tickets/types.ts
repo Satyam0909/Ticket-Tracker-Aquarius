@@ -10,6 +10,13 @@ export interface Ticket {
   updatedAt: string
 }
 
+export interface TicketAttachment {
+  id: string
+  fileName: string
+  length: number
+  uploadedAt: string
+}
+
 export interface TicketPage {
   items: Ticket[]
   totalCount: number

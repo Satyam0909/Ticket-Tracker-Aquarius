@@ -5,10 +5,17 @@ import {
   type TicketPriority,
   type TicketStatus,
 } from '../../../shared/constants/ticketOptions'
+import {
+  allowedAttachmentExtensions,
+  attachmentAccept,
+  maxAttachmentSizeBytes,
+  maxAttachmentsPerTicket,
+  validateAttachmentFiles,
+} from '../attachmentPolicy'
 import type { TicketDraft } from '../types'
 
 interface TicketFormProps {
-  onCreate: (draft: TicketDraft) => Promise<void>
+  onCreate: (draft: TicketDraft, files: File[]) => Promise<void>
 }
 
 const initialDraft: TicketDraft = {
@@ -22,9 +29,16 @@ function TicketForm({ onCreate }: TicketFormProps) {
   const [draft, setDraft] = useState<TicketDraft>(initialDraft)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
+  const [attachmentError, setAttachmentError] = useState('')
+  const [files, setFiles] = useState<File[]>([])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (attachmentError) {
+      setError(attachmentError)
+      return
+    }
+
     const title = draft.title.trim()
     if (!title) {
       setError('Enter a ticket title.')
@@ -42,12 +56,26 @@ function TicketForm({ onCreate }: TicketFormProps) {
     setIsSaving(true)
     setError('')
     try {
-      await onCreate({ ...draft, title })
+      await onCreate({ ...draft, title }, files)
       setDraft(initialDraft)
+      setFiles([])
+      setAttachmentError('')
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : 'Unable to create ticket.')
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  function selectFiles(selected: FileList | null) {
+    if (!selected) return
+    const newFiles = [...files, ...Array.from(selected)]
+    const validationError = validateAttachmentFiles(newFiles)
+    if (validationError) setAttachmentError(validationError)
+    else {
+      setFiles(newFiles)
+      setAttachmentError('')
+      setError('')
     }
   }
 
@@ -131,9 +159,48 @@ function TicketForm({ onCreate }: TicketFormProps) {
             </select>
           </div>
         </div>
-        {error && (
+        <label className="form-label" htmlFor="ticket-attachments">
+          Attachments <span className="optional">(optional)</span>
+        </label>
+        <input
+          id="ticket-attachments"
+          className="form-control attachment-input"
+          type="file"
+          accept={attachmentAccept}
+          multiple
+          disabled={isSaving}
+          onChange={(event) => {
+            selectFiles(event.currentTarget.files)
+            event.currentTarget.value = ''
+          }}
+        />
+        <p className="attachment-hint">
+          Up to {maxAttachmentsPerTicket} files, {maxAttachmentSizeBytes / 1024 / 1024} MB each.
+          Allowed: {allowedAttachmentExtensions.join(', ')}
+        </p>
+        {files.length > 0 && (
+          <ul className="selected-attachments">
+            {files.map((file, index) => (
+              <li key={`${file.name}-${file.lastModified}-${index}`}>
+                <span>{file.name}</span>
+                <button
+                  type="button"
+                  aria-label={`Remove ${file.name}`}
+                  onClick={() => {
+                    setFiles(files.filter((_, fileIndex) => fileIndex !== index))
+                    setAttachmentError('')
+                    setError('')
+                  }}
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {(error || attachmentError) && (
           <div className="alert error-alert" role="alert">
-            {error}
+            {error || attachmentError}
           </div>
         )}
         <button className="submit-button" type="submit" disabled={isSaving}>

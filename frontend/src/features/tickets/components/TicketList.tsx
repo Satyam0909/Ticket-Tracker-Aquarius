@@ -2,6 +2,7 @@ import { ticketStatuses, type TicketStatus } from '../../../shared/constants/tic
 import { formatDate } from '../../../shared/utils/formatDate'
 import { getPaginationRange } from '../../../shared/utils/pagination'
 import TicketFilters from './TicketFilters'
+import TicketAttachments from './TicketAttachments'
 import type { Ticket } from '../types'
 
 interface TicketListProps {
@@ -86,6 +87,7 @@ function TicketList({
                 <span className="ticket-meta">
                   #{ticket.id.slice(0, 8)} · {formatDate(ticket.createdAt)}
                 </span>
+                <TicketAttachments ticketId={ticket.id} ticketTitle={ticket.title} />
               </div>
               <div className="ticket-actions">
                 <label className={`status-select status-${ticket.status}`}>

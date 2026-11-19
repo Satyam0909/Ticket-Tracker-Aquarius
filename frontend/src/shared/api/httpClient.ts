@@ -62,10 +62,10 @@ export function refreshSession(): Promise<AuthSession> {
   return refreshPromise
 }
 
-export async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function requestResponse(path: string, init?: RequestInit): Promise<Response> {
   const headers = new Headers(init?.headers)
   headers.set('Accept', 'application/json, application/problem+json')
-  if (init?.body && !headers.has('Content-Type')) {
+  if (init?.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
   }
 
@@ -81,10 +81,19 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
       if (!(cause instanceof ApiError) || cause.status !== 401) throw cause
     }
   }
-  if (!response.ok) {
-    throw await toApiError(response)
-  }
+  return response
+}
+
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await requestResponse(path, init)
+  if (!response.ok) throw await toApiError(response)
 
   if (response.status === 204) return undefined as T
   return (await response.json()) as T
+}
+
+export async function requestBlob(path: string, init?: RequestInit): Promise<Blob> {
+  const response = await requestResponse(path, init)
+  if (!response.ok) throw await toApiError(response)
+  return response.blob()
 }

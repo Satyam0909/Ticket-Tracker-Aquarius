@@ -6,6 +6,7 @@ namespace SupportTickets.Api.Infrastructure.Persistence;
 public sealed class TicketDbContext(DbContextOptions<TicketDbContext> options) : DbContext(options)
 {
     public DbSet<Ticket> Tickets => Set<Ticket>();
+    public DbSet<TicketAttachment> TicketAttachments => Set<TicketAttachment>();
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
@@ -28,6 +29,23 @@ public sealed class TicketDbContext(DbContextOptions<TicketDbContext> options) :
         ticket.HasIndex(item => item.Status);
         ticket.HasIndex(item => item.Priority);
         ticket.HasIndex(item => item.CreatedAt);
+
+        var attachment = modelBuilder.Entity<TicketAttachment>();
+        attachment.ToTable("TicketAttachments", table =>
+            table.HasCheckConstraint("CK_TicketAttachments_Slot", "[slot] BETWEEN 1 AND 3"));
+        attachment.HasKey(item => item.Id);
+        attachment.Property(item => item.Id).HasColumnName("id");
+        attachment.Property(item => item.TicketId).HasColumnName("ticket_id");
+        attachment.Property(item => item.Slot).HasColumnName("slot");
+        attachment.Property(item => item.FileName).HasColumnName("file_name").HasMaxLength(255).IsRequired();
+        attachment.Property(item => item.Length).HasColumnName("length");
+        attachment.Property(item => item.Content).HasColumnName("content").HasColumnType("varbinary(max)").IsRequired();
+        attachment.Property(item => item.UploadedAt).HasColumnName("uploaded_at");
+        attachment.HasIndex(item => new { item.TicketId, item.Slot }).IsUnique();
+        attachment.HasOne<Ticket>()
+            .WithMany()
+            .HasForeignKey(item => item.TicketId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         var account = modelBuilder.Entity<UserAccount>();
         account.ToTable("UserAccounts");

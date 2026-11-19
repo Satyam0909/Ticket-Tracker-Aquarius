@@ -1,5 +1,12 @@
-import { request } from '../../../shared/api/httpClient'
-import type { Ticket, TicketDraft, TicketListParameters, TicketPage, TicketSummary } from '../types'
+import { request, requestBlob } from '../../../shared/api/httpClient'
+import type {
+  Ticket,
+  TicketAttachment,
+  TicketDraft,
+  TicketListParameters,
+  TicketPage,
+  TicketSummary,
+} from '../types'
 
 function buildListQuery(parameters: TicketListParameters): string {
   const query = new URLSearchParams({
@@ -24,6 +31,29 @@ export const ticketsApi = {
     return request<Ticket>('/api/tickets', {
       method: 'POST',
       body: JSON.stringify(draft),
+    })
+  },
+
+  listAttachments(ticketId: string): Promise<TicketAttachment[]> {
+    return request<TicketAttachment[]>(`/api/tickets/${ticketId}/attachments`)
+  },
+
+  uploadAttachments(ticketId: string, files: File[]): Promise<TicketAttachment[]> {
+    const body = new FormData()
+    files.forEach((file) => body.append('files', file, file.name))
+    return request<TicketAttachment[]>(`/api/tickets/${ticketId}/attachments`, {
+      method: 'POST',
+      body,
+    })
+  },
+
+  downloadAttachment(ticketId: string, attachmentId: string): Promise<Blob> {
+    return requestBlob(`/api/tickets/${ticketId}/attachments/${attachmentId}`)
+  },
+
+  deleteAttachment(ticketId: string, attachmentId: string): Promise<void> {
+    return request<void>(`/api/tickets/${ticketId}/attachments/${attachmentId}`, {
+      method: 'DELETE',
     })
   },
 

@@ -55,8 +55,19 @@ function TicketDashboard({ email, authError, onLogout }: TicketDashboardProps) {
     return () => controller.abort()
   }, [statusFilter, search, page, refreshVersion])
 
-  async function createTicket(draft: TicketDraft) {
-    await ticketsApi.create(draft)
+  async function createTicket(draft: TicketDraft, files: File[]) {
+    const ticket = await ticketsApi.create(draft)
+    if (files.length > 0) {
+      try {
+        await ticketsApi.uploadAttachments(ticket.id, files)
+      } catch (cause: unknown) {
+        setError(
+          `Ticket created, but attachments could not be uploaded: ${
+            cause instanceof Error ? cause.message : 'try again from the ticket attachments.'
+          }`,
+        )
+      }
+    }
     setIsLoading(true)
     setPage(1)
     setRefreshVersion((value) => value + 1)
